@@ -32,7 +32,7 @@ def init_db():
     try:
         conn.execute("ALTER TABLE ranks ADD COLUMN location TEXT")
     except sqlite3.OperationalError:
-        pass  # column already exists
+        pass
     conn.close()
 
 def save_rank(brand_url, keyword, rank, country, lang, location):
@@ -128,26 +128,28 @@ def get_google_rank(keyword, brand_url, country='in', lang='en', location=None, 
 # ------------------- STREAMLIT UI --------------------
 st.set_page_config(page_title="Keyword Rank Tracker", page_icon="🔍", layout="centered")
 
-st.title("🔍 Keyword Rank Tracker (SerpApi Powered)")
-st.caption("Real-time Google rank checker with full India → State → City targeting")
+st.title("🔍 Keyword Rank Tracker")
+st.caption("Real-time Google rank checker with Country → State → Optional City targeting")
 
 # ---- Sidebar ----
 st.sidebar.header("⚙️ Location Settings")
 country = st.sidebar.selectbox("🌎 Country", ["India", "United States", "United Kingdom", "Canada", "Australia"], index=0)
 lang = st.sidebar.selectbox("🗣️ Language", ["en", "hi", "fr", "es", "de"], index=0)
 
-# Dynamic State → City selector
+# Dynamic State → Optional City selector
 state, city, location = None, None, None
 if country == "India":
     state = st.sidebar.selectbox("🏙️ Select State or UT", ["All India"] + sorted(INDIA_STATES_CITIES.keys()))
+    
     if state != "All India":
         cities = INDIA_STATES_CITIES[state]
-        city = st.sidebar.selectbox("🏘️ Select City", ["All Cities"] + cities)
+        city = st.sidebar.selectbox("🏘️ Select City (optional)", ["Skip City"] + cities)
         custom_city = st.sidebar.text_input("Or enter custom city (optional)")
         if custom_city.strip():
             city = custom_city.strip().title()
 
-        if city != "All Cities":
+        # ✅ Build the location string based on user input
+        if city and city not in ["All Cities", "Skip City"]:
             location = f"{city}, {state}, India"
         else:
             location = f"{state}, India"
